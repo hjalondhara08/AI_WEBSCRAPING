@@ -55,6 +55,12 @@ def scrape_with_brightdata(url: str) -> str:
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"BrightData error: {str(e)}")
 
+def clean_html_to_text(html_content: str) -> str:
+    """Clean HTML content to plain text"""
+    soup = BeautifulSoup(html_content, "html.parser")
+    text = soup.get_text(separator="\n")
+    return text.strip()
+
 
 def extract_headlines(cleaned_text: str) -> str:
     """
