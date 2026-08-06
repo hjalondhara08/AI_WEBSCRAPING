@@ -4,8 +4,8 @@ import requests
 BACKEND_URL = "http://localhost:1234"
 
 def main():
-    st.title("🥷 NewsNinja")
-    st.markdown("#### 🎙️ News & Reddit Audio Summarizer")
+    st.title("NewsNinja")
+    st.markdown("News & Reddit Audio Summarizer")
    
     # Initialize session state
     if 'topics' not in st.session_state:
@@ -16,7 +16,7 @@ def main():
     # Sidebar for settings
     with st.sidebar:
         st.header("Settings")
-        source_type = st.selectbox(
+        source_type = st.selectbox(  
             "Data Sources",
             options=["both", "news", "reddit"],
             format_func=lambda x: f"🌐 {x.capitalize()}" if x == "news" else f"📑 {x.capitalize()}"
