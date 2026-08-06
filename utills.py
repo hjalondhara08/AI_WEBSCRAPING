@@ -113,3 +113,108 @@ def summarize_with_ollama(headlines) -> str:
         return response['response']
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ollama error: {str(e)}")
+
+def generate_broadcast_news(api_key, news_data, reddit_data, topics):
+    # Updated system message with flexible source handling
+    system_prompt = """
+    You are broadcast_news_writer, a professional virtual news reporter. Generate natural, TTS-ready news reports using available sources:
+
+    For each topic, STRUCTURE BASED ON AVAILABLE DATA:
+    1. If news exists: "According to official reports..." + summary
+    2. If Reddit exists: "Online discussions on Reddit reveal..." + summary
+    3. If both exist: Present news first, then Reddit reactions
+    4. If neither exists: Skip the topic (shouldn't happen)
+
+    Formatting rules:
+    - ALWAYS start directly with the content, NO INTRODUCTIONS
+    - Keep audio length 60-120 seconds per topic
+    - Use natural speech transitions like "Meanwhile, online discussions..." 
+    - Incorporate 1-2 short quotes from Reddit when available
+    - Maintain neutral tone but highlight key sentiments
+    - End with "To wrap up this segment..." summary
+
+    Write in full paragraphs optimized for speech synthesis. Avoid markdown.
+    """
+
+    try:
+        topic_blocks = []
+        for topic in topics:
+            news_content = news_data["news_analysis"].get(topic ) if news_data else ''
+            reddit_content = reddit_data["reddit_analysis"].get(topic) if reddit_data else ''
+            context = []
+            if news_content:
+                context.append(f"OFFICIAL NEWS CONTENT:\n{news_content}")
+            if reddit_content:
+                context.append(f"REDDIT DISCUSSION CONTENT:\n{reddit_content}")
+            
+            if context:  # Only include topics with actual content
+                topic_blocks.append(
+                    f"TOPIC: {topic}\n\n" +
+                    "\n\n".join(context)
+                )
+
+        user_prompt = (
+            "Create broadcast segments for these topics using available sources:\n\n" +
+            "\n\n--- NEW TOPIC ---\n\n".join(topic_blocks)
+        )
+
+        llm = ChatGroq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            model="openai/gpt-oss-120b",
+            options={
+                "temperature": 0.4,
+                "max_tokens": 800
+            },
+            stream=False
+        )
+
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt)
+        ])
+
+        return response.content
+
+    except Exception as e:
+        raise e
+
+
+def summarize_with_anthropic_news_script(api_key: str, headlines: str) -> str:
+    """
+    Summarize multiple news headlines into a TTS-friendly broadcast news script using Anthropic Claude model via LangChain.
+    """
+    system_prompt = """
+   You are my personal news editor and scriptwriter for a news podcast. Your job is to turn raw headlines into a clean, professional, and TTS-friendly news script.
+
+   The final output will be read aloud by a news anchor or text-to-speech engine. So:
+    - Do not include any special characters, emojis, formatting symbols, or markdown.
+    - Do not add any preamble or framing like "Here's your summary" or "Let me explain".
+    - Write in full, clear, spoken-language paragraphs.
+    - Keep the tone formal, professional, and broadcast-style — just like a real TV news script.
+    - Focus on the most important headlines and turn them into short, informative news segments that sound natural when spoken.
+    - Start right away with the actual script, using transitions between topics if needed.
+
+Remember: Your only output should be a clean script that is ready to be read out loud.
+"""
+
+    try:
+        llm =ChatGroq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            model="openai/gpt-oss-120b",
+            prompt=prompt,
+            options={
+                "temperature": 0.4,
+                "max_tokens": 800
+            },
+            stream=False
+        )
+
+        # Invoke Claude with system + user prompt
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=headlines)
+        ])
+
+        return response.content
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Anthropic error: {str(e)}")
