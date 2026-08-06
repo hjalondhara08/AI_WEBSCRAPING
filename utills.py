@@ -34,3 +34,24 @@ def generate_news_urls_to_scrape(list_of_keywords):
         valid_urls_dict[keyword] = generate_valid_news_url(keyword)
     
     return valid_urls_dict
+
+
+def scrape_with_brightdata(url: str) -> str:
+    """Scrape a URL using BrightData"""
+    headers = {
+        "Authorization": f"Bearer {os.getenv('BRIGHTDATA_API_KEY')}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "zone": os.getenv('BRIGHTDATA_WEB_UNLOCKER_ZONE'),
+        "url": url,
+        "format": "raw"
+    }
+    
+    try:
+        response = requests.post("https://api.brightdata.com/request", json=payload, headers=headers)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"BrightData error: {str(e)}")
