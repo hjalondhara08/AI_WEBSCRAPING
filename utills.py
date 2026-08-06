@@ -25,3 +25,12 @@ def generate_valid_news_url(keyword: str) -> str:
     """
     q = quote_plus(keyword)
     return f"https://news.google.com/search?q={q}&tbs=sbd:1"
+
+
+
+def generate_news_urls_to_scrape(list_of_keywords):
+    valid_urls_dict = {}
+    for keyword in list_of_keywords:
+        valid_urls_dict[keyword] = generate_valid_news_url(keyword)
+    
+    return valid_urls_dict
