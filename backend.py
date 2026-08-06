@@ -24,9 +24,7 @@ async def generate_news_audio(request: NewsRequest):
         if request.source_type in ["reddit", "both"]:
             results["reddit"] = await scrape_reddit_topics(request.topics)
 
-        if age > 15 :
-            print("Age is greater than 15")
-            
+
      except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
